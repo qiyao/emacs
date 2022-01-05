@@ -14,7 +14,6 @@
 			         popup
 			         xcscope
 			         color-theme-sanityinc-tomorrow
-			         eclim company-emacs-eclim
 			         magit-popup
 			         eyebrowse
                      use-package
@@ -36,7 +35,13 @@
 ;; high-light the marked region.
 (setq mark-command t)
 (global-unset-key (kbd "C-SPC"))
-(global-set-key (kbd "M-SPC") 'set-mark-command)
+(global-set-key (kbd "C-.") 'set-mark-command)
+
+;;; I prefer cmd key for meta
+(setq mac-option-key-is-meta nil
+      mac-command-key-is-meta t
+      mac-command-modifier 'meta
+      mac-option-modifier 'none)
 ;; customize the color of it
 ;;(setq hl-line-mode t)
 
@@ -48,6 +53,10 @@
 (setq fill-column 72)
 
 (setq enable-local-variables :all)
+
+(setq-default indent-tabs-mode nil)
+(setq-default tab-width 4)
+(setq indent-line-function 'insert-tab)
 
 ;; send mail
 (setq user-full-name "Yao Qi")
@@ -128,13 +137,17 @@
 
 (setq mode-line-format default-mode-line-format)
 
+(set-face-foreground 'mode-line-inactive "white")
+(set-face-background 'mode-line-inactive "blue")
+
+(set-face-foreground 'mode-line "white")
+(set-face-background 'mode-line "red")
+
+(set-face-background 'vertical-border "green")
+(set-face-foreground 'vertical-border (face-background 'vertical-border))
 
 (if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
 (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
-
-;; egg;
-(add-to-list 'load-path "~/.emacs.d/egg/")
-(require 'egg)
 
 (defun tabbar-buffer-groups ()
    "Return the list of group names the current buffer belongs to.
@@ -158,10 +171,10 @@
 
 
 ;color-theme
-;;(add-to-list 'load-path "~/.emacs.d")
-(require 'color-theme)
+;;(add-to-lnist 'load-path "~/.emacs.d")
+;(require 'color-theme)
 (setq color-theme-is-global t)
-(color-theme-initialize)
+;;(color-theme-initialize)
 ;(color-theme-calm-forest)
 ;(color-theme-blue-mood)
 ;(color-theme-blue-sea)
@@ -170,15 +183,18 @@
 ;;(color-theme-sitaramv-solaris)
 ;;(color-theme-tty-dark)
 ;;(color-theme-jsc-light)
-(eval-after-load "color-theme" '(color-theme-dark-laptop))
+;;(eval-after-load "color-theme" '(color-theme-dark-laptop))
+;;(load-theme sanityinc-tomorrow-blue)
+
+(require 'color-theme-sanityinc-tomorrow)
+(color-theme-sanityinc-tomorrow--define-theme blue)
 ;;(eval-after-load "color-theme" '(color-theme-dark-blue2))
 ;(color-theme-bharadwaj-slate)
 ;(color-theme-billw)
 ;(euphoria)
 ;(hober)
 
-(require 'org)
-(setq org-log-done 'time)
+(windmove-default-keybindings)
 
 ;; spell check
 ;(add-hook 'c-mode-common-hook
