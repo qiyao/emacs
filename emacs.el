@@ -213,52 +213,176 @@
 (add-hook 'prog-mode-hook 'flyspell-prog-mode)
 (add-hook 'diff-mode-hook 'flyspell-mode)
 
-
 (setq browse-url-browser-function 'w3m-browse-url)
 (autoload 'w3m-browse-url "w3m" "Ask a WWW browser to show a URL." t)
 (setq w3m-default-display-inline-images t)
 
-;;org2blog
+(defun flyspell-emacs-popup-textual (event poss word)
+  "A textual flyspell popup menu."
+  (require 'popup)
+  (let* ((corrects (if flyspell-sort-corrections
+                       (sort (car (cdr (cdr poss))) 'string<)
+                     (car (cdr (cdr poss)))))
+         (cor-menu (if (consp corrects)
+                       (mapcar (lambda (correct)
+                                 (list correct correct))
+                               corrects)
+                     '()))
+         (affix (car (cdr (cdr (cdr poss)))))
+         show-affix-info
+         (base-menu  (let ((save (if (and (consp affix) show-affix-info)
+                                     (list
+                                      (list (concat "Save affix: " (car affix))
+                                            'save)
+                                      '("Accept (session)" session)
+                                      '("Accept (buffer)" buffer))
+                                   '(("Save word" save)
+                                     ("Accept (session)" session)
+                                     ("Accept (buffer)" buffer)))))
+                       (if (consp cor-menu)
+                           (append cor-menu (cons "" save))
+                         save)))
+         (menu (mapcar
+                (lambda (arg) (if (consp arg) (car arg) arg))
+                base-menu)))
+    (cadr (assoc (popup-menu* menu :scroll-bar t) base-menu))))
 
-(require 'org2blog-autoloads)
-(require 'xml-rpc)
-(setq org2blog/wp-blog-alist
-      '(("wordpress"
-         :url "https://yaoqi.wordpress.com/xmlrpc.php"
-         :username "yaoqi"
-         :default-title ""
-         :default-categories "my-default category"
-         :tags-as-categories nil)
-	))
-(setq org2blog/wp-buffer-template
-      "-----------------------
-#+TITLE: %s
-#+DATE: %s
-#+CATEGORY:
-#+TAGS:
------------------------\n")
-(defun my-format-function (format-string)
-  (format format-string
-          org2blog/wp-default-title
-          (format-time-string "[%Y-%m-%d]" (current-time))))
-(setq org2blog/wp-buffer-format-function 'my-format-function)
-(setq org-src-fontify-natively t)
+(defun flyspell-emacs-popup-choose (org-fun event poss word)
+  (if (display-popup-menus-p)
+      (funcall org-fun event poss word)
+    (flyspell-emacs-popup-textual event poss word)))
 
-(org-babel-do-load-languages
- 'org-babel-load-languages
- '((python . t)))
+(eval-after-load "flyspell"
+  '(progn
+     (advice-add 'flyspell-emacs-popup :around #'flyspell-emacs-popup-choose)))
 
-(setq org2blog/wp-use-sourcecode-shortcode 't)
+(add-hook 'java-mode-hook (lambda ()
+			    (setq c-basic-offset 4
+				  tab-width 4
+				  indent-tabs-mode nil)))
 
-;; company
-(load-file "~/.emacs.d/company.el")
+(defun my-java-mode-hook ()
+  (setq c-basic-offset 4
+	tab-width 4
+	indent-tabs-mode nil)
+  (eclim-mode t))
+
+(add-hook 'java-mode-hook 'my-java-mode-hook)
+
+(require 'company)
+(global-company-mode t)
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
+ '(company-preview ((t (:foreground "darkgray" :underline t))))
+ '(company-preview-common ((t (:inherit company-preview))))
+ '(company-tooltip ((t (:background "lightgray" :foreground "black"))))
+ '(company-tooltip-common ((((type x)) (:inherit company-tooltip :weight bold)) (t (:inherit company-tooltip))))
+ '(company-tooltip-common-selection ((((type x)) (:inherit company-tooltip-selection :weight bold)) (t (:inherit company-tooltip-selection))))
+ '(company-tooltip-selection ((t (:background "steelblue" :foreground "white")))))
+
+(eval-after-load 'company
+  '(progn
+     (define-key company-mode-map (kbd "M-/") 'company-complete-common-or-cycle)
+     (define-key company-active-map (kbd "C-n") 'company-select-next)
+     (define-key company-active-map (kbd "C-p") 'company-select-previous)))
+
+(add-hook 'python-mode-hook
+	  (lambda ()
+	    (setq company-backends '((company-jedi
+				                  company-yasnippet ;; Comment out this line and the follow one should find some differences
+				                  company-files ;;
+				                  company-dabbrev-code
+				                  company-gtags
+				                  company-etags
+				                  company-keywords)
+				                 company-dabbrev))))
+(add-hook 'python-mode-hook (lambda ()
+                              (require 'sphinx-doc)
+                              (sphinx-doc-mode t)))
+(setq python-shell-interpreter "python3")
+
+;; Company appears to override the above keymap based on company-auto-complete-chars.
+;; Turning it off ensures we have full control.
+(setq company-auto-complete-chars nil)
+
+(setq help-at-pt-display-when-idle t)
+(setq help-at-pt-timer-delay 0.1)
+(help-at-pt-set-timer)
+
+(setq browse-url-browser-function 'w3m-browse-url)
+(autoload 'w3m-browse-url "w3m" "Ask a WWW browser to show a URL." t)
+(setq w3m-default-display-inline-images t)
+
+(add-to-list 'auto-mode-alist '("\.groovy$" . groovy-mode))
+(add-to-list 'auto-mode-alist '("\.gradle$" . groovy-mode))
+
+(setq magit-diff-paint-whitespace-lines "all")
+(setq magit-diff-paint-whitespace t)
+(setq magit-diff-refine-ignore-whitespace nil)
+(setq magit-diff-refine-hunk nil)
+(setq magit-diff-highlight-indentation 1)
+
+(require 'ansi-color)
+(defun colorize-compilation-buffer ()
+  (toggle-read-only)
+  (ansi-color-apply-on-region compilation-filter-start (point))
+  (toggle-read-only))
+(add-hook 'compilation-filter-hook 'colorize-compilation-buffer)
+
+(global-set-key (kbd "C-x C-b") 'ibuffer)
+(setq ibuffer-saved-filter-groups
+      (quote (("default"
+               ("shell" (or (mode . shell-mode)
+                            (mode . eshell-mode)))
+               ("magit" (or
+                         (mode . magit-status-mode)
+                         (mode . magit-process-mode)
+                         (mode . magit-diff-mode)
+                         (mode . magit-revision-mode)
+                         (mode . magit-log-mode)
+                         ))
+               ("programming" ;;
+                (or
+                 (mode . c-mode)
+                 (mode . c++-mode)
+                 (mode . perl-mode)
+                 (mode . python-mode)
+                 (mode . emacs-lisp-mode)))
+               ("directories"
+                (mode . dired-mode))
+               ("emacs" (or
+                         (name . "^\\*scratch\\*$")
+                         (name . "^\\*Messages\\*$")))
+               ))))
+
+(add-hook 'ibuffer-mode-hook
+          (lambda ()
+            (ibuffer-switch-to-saved-filter-groups "default")))
+
+(eyebrowse-mode t)
+
+(use-package eww
+  :config
+  (progn
+    (defvar modi/eww-google-search-url "https://www.google.com/search?q="
+      "URL for Google searches.")
+    (setq eww-search-prefix modi/eww-google-search-url)
+    ;; (setq eww-search-prefix "https://duckduckgo.com/html/?q=")
+    (setq eww-download-directory "~/Downloads")
+    (setq eww-form-checkbox-symbol "[ ]")
+    ;; (setq eww-form-checkbox-symbol "☐") ; Unicode hex 2610
+    (setq eww-form-checkbox-selected-symbol "[X]")
+    ;; (setq eww-form-checkbox-selected-symbol "☑") ; Unicode hex 2611
+    ;; Improve the contract of pages like Google results
+    ;; http://emacs.stackexchange.com/q/2955/115
+    (setq shr-color-visible-luminance-min 80) ; default = 40
+    ))
+
+
 
 
 (custom-set-variables
