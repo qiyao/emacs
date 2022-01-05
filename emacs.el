@@ -98,6 +98,10 @@
 
 (global-set-key (kbd "M-g g") 'goto-line)
 
+(global-set-key (kbd "C-x p") (lambda ()
+                                (interactive)
+                                (other-window -1)))
+
 ;; Template for displaying mode line for current buffer.
 (setq default-mode-line-format
       ( list ""
