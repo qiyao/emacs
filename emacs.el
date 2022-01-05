@@ -7,9 +7,18 @@
 
 ;; list the packages you want
 (defvar package-list)
-(setq package-list '(company company-irony
-			     company-irony-c-headers 
-			     popup))
+(setq package-list '(company
+                     company-irony
+			         company-irony-c-headers
+			         company-jedi
+			         popup
+			         xcscope
+			         color-theme-sanityinc-tomorrow
+			         eclim company-emacs-eclim
+			         magit-popup
+			         eyebrowse
+                     use-package
+                 ))
 ;; fetch the list of packages available
 (unless package-archive-contents
   (package-refresh-contents))
